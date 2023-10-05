@@ -1,7 +1,6 @@
 module Spree
   module Admin
     class ThemesPreviewController < Spree::Admin::BaseController
-
       skip_before_action :authorize_admin
       before_action :load_theme, only: [:show, :destroy]
 
@@ -19,13 +18,10 @@ module Spree
 
       private
 
-        def load_theme
-          @theme = Spree::Theme.find_by(id: params[:theme_id])
-          unless @theme
-            redirect_to admin_themes_path
-          end
-        end
-
+      def load_theme
+        @theme = Spree::Theme.find_by(id: params[:theme_id])
+        redirect_to admin_themes_path unless @theme
+      end
     end
   end
 end
