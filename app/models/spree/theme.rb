@@ -5,37 +5,26 @@ module Spree
     DEFAULT_STATE = 'drafted'
     TEMPLATE_FILE_CONTENT_TYPE = 'application/zip'
     STATES = %w(drafted compiled published)
-    THEMES_PATH = File.join(Rails.root, 'public', 'vinsol_spree_themes')
-    CURRENT_THEME_PATH = File.join(THEMES_PATH, 'current')
-    ASSET_CACHE_PATH = File.join(Rails.root, 'tmp', 'cache')
+    THEMES_PATH = Rails.root.join('public', 'vinsol_spree_themes')
+    CURRENT_THEME_PATH = Rails.root.join('public', 'vinsol_spree_themes', 'current')
+    ASSET_CACHE_PATH = Rails.root.join('tmp', 'cache')
 
-    has_attached_file :template_file, storage: :filesystem,
-                                      path: 'public/system/spree/themes/:filename'
+    has_one_attached :template_file
 
     ## VALIDATIONS ##
-    validates_attachment :template_file, presence: true,
-                                         content_type: { content_type: TEMPLATE_FILE_CONTENT_TYPE }
-    do_not_validate_attachment_file_type :template_file
-
+    validates :template_file, presence: true
     validates :name, presence: true,
                      uniqueness: { case_sensitive: false }
     validates :state, inclusion: { in: STATES }
-
-    # FIX_ME_PG:- check for atleast one published theme.
-    # validate :ensure_atleast_one_published_theme, if: :state_changed?, unless: :published?
 
     ## ASSOCIATIONS ##
     has_many :themes_templates, dependent: :destroy
 
     ## CALLBACKS ##
-    before_validation :set_name, if: :template_file?
+    before_validation :set_name, if: -> { template_file.attached? }
     before_validation :set_state, unless: :state?
     after_commit :extract_template_zip_file, on: :create
-    # before_destroy :ensure_not_published, prepend: true
     after_destroy :delete_from_file_system
-
-    # FIX_ME_PG:- Need to have default state to compiled when uploading theme. Set state after zip file extraction.
-    # after_create :set_state_to_compile
 
     ## SCOPES ##
     scope :published, -> { where(state: 'published') }
@@ -86,7 +75,7 @@ module Spree
 
     def remove_current_theme
       Spree::Theme.published.each(&:draft)
-      File.delete(CURRENT_THEME_PATH) if File.exist?(CURRENT_THEME_PATH)
+      FileUtils.rm_rf(CURRENT_THEME_PATH) if File.exist?(CURRENT_THEME_PATH)
     end
 
     def apply_new_theme
@@ -100,12 +89,10 @@ module Spree
       precompile_assets.minify
       precompile_assets.copy_preview_assets
       remove_cache
-      # update_cache_timestamp
     end
 
     def close_preview
       remove_cache
-      # update_cache_timestamp
     end
 
     def update_cache_timestamp
@@ -113,45 +100,29 @@ module Spree
     end
 
     def remove_cache
-      FileUtils.remove_dir(ASSET_CACHE_PATH) if File.exists?(ASSET_CACHE_PATH)
+      FileUtils.rm_rf(ASSET_CACHE_PATH) if File.exist?(ASSET_CACHE_PATH)
     end
 
     private
 
-      # def ensure_atleast_one_published_theme
-      #   errors.add(:base, Spree.t('models.theme.minimum_active_error')) unless Spree::Theme.published.one?
-      # end
+    def set_name
+      self.name = File.basename(template_file.filename.to_s, File.extname(template_file.filename.to_s))
+    end
 
-      def set_name
-        self.name = File.basename(template_file_file_name, File.extname(template_file_file_name))
-      end
+    def set_state
+      self.state = DEFAULT_STATE
+    end
 
-      def set_state
-        self.state = DEFAULT_STATE
-      end
+    def extract_template_zip_file
+      ZipFileExtractor.new(template_file.download, self).extract
+    end
 
-      def extract_template_zip_file
-        ZipFileExtractor.new(template_file.path, self).extract
-      end
+    def delete_from_file_system
+      source_dir = File.join(THEMES_PATH, name)
 
-      def delete_from_file_system
-        source_dir = File.join(THEMES_PATH, name)
-
-        # This makes sure that the directory exists when deleting the theme.
-        Dir.mkdir(source_dir) unless Dir.exists?(source_dir)
-        FileUtils.remove_dir(source_dir)
-      end
-
-      def ensure_not_published
-        if published?
-          errors.add(:base, Spree.t('models.theme.no_destory_error'))
-          throw(:abort)
-        end
-      end
-
-      # def set_state_to_compile
-      #   self.compile!
-      # end
-
+      # This makes sure that the directory exists when deleting the theme.
+      Dir.mkdir(source_dir) unless Dir.exist?(source_dir)
+      FileUtils.rm_rf(source_dir)
+    end
   end
 end

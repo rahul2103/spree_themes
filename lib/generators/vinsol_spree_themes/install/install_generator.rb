@@ -27,24 +27,23 @@ module VinsolSpreeThemes
         end
       end
 
-      def load_default_theme
-        puts 'Loading and applying default spree theme...'
+      # def load_default_theme
+      #   puts 'Loading and applying default spree theme...'
 
-        filepath = "#{ ::VinsolSpreeThemes::Engine.root }/lib/generators/themes/default.zip"
+      #   filepath = "#{ ::VinsolSpreeThemes::Engine.root }/lib/generators/themes/default.zip"
 
-        # creating theme object.
-        theme = Spree::Theme.new(state: 'drafted', name: 'default')
-        theme.template_file = File.open(filepath)
-        theme.save(validate: false)
+      #   # creating theme object.
+      #   theme = Spree::Theme.new(state: 'drafted', name: 'default')
+      #   theme.template_file.attach(io: File.open(filepath), filename: 'default.zip')
+      #   theme.save(validate: false)
 
-        # extracting the zip file.
-        ZipFileExtractor.new(filepath, theme)
+      #   # extracting the zip file.
+      #   ZipFileExtractor.new(filepath, theme)
 
-        # publishing theme.
-        theme.compile
-        theme.publish
-      end
-
+      #   # publishing theme.
+      #   theme.compile
+      #   theme.publish
+      # end
     end
   end
 end

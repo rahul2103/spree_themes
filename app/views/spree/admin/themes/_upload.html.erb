@@ -1,17 +1,23 @@
-<%= form_for @theme, url: upload_admin_themes_path, method: :post do |f| %>
-  <div class="updload-theme-panel col-md-4 col-sm-6" data-hook="theme-file-upload-form">
-    <div class="upload-theme-col">
-      <label class="cmn-height-block text-center">
-        <%= f.file_field :template_file, class: 'form-control' %>
-        <div class="file-btn-helper">
-          <i class="glyphicon glyphicon-upload upload-icon"></i><br />
-          ADD NEW THEME
+<div class="card">
+  <div class="card-body">
+    <%= form_for @theme, url: upload_admin_themes_path, method: :post, html: { class: 'row' } do |f| %>
+      <div class="col-md-4 col-sm-6" data-hook="theme-file-upload-form">
+        <div class="form-group upload-theme-col">
+          <label class="d-block text-center">
+            <%= f.file_field :template_file, class: 'form-control-file' %>
+            <div class="file-btn-helper">
+              <i class="fas fa-upload upload-icon"></i><br />
+              ADD NEW THEME
+            </div>
+          </label>
         </div>
-      </label>
-    </div>
-  </div>
+      </div>
 
-  <div class="form-actions hidden" data-hook="buttons">
-    <%= f.submit Spree.t('actions.upload'), class: 'btn-success' %>
+      <div class="col-md-4 col-sm-6" data-hook="buttons">
+        <div class="form-actions">
+          <%= f.submit Spree.t('actions.upload'), class: 'btn btn-success' %>
+        </div>
+      </div>
+    <% end %>
   </div>
-<% end %>
+</div>
